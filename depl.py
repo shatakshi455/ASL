@@ -3,7 +3,6 @@ import pickle
 import cv2
 import mediapipe as mp
 import numpy as np
-import time
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
 
 def calculate_angle(v1, v2):
@@ -42,7 +41,6 @@ recognized_text = ""
 class VideoTransformer(VideoTransformerBase):
     def __init__(self):
         self.previous_prediction = None
-        self.start_time = None
 
     def transform(self, frame):
         global recognized_text
@@ -98,18 +96,12 @@ class VideoTransformer(VideoTransformerBase):
                 predicted_index = int(prediction[0])
                 predicted_character = labels_dict[predicted_index]
 
-                if predicted_character == self.previous_prediction:
-                    if time.time() - self.start_time >= 2:
-                        if predicted_character == 'space':
-                            recognized_text += ' '
-                        elif predicted_character == 'delete':
-                            recognized_text = recognized_text[:-1]
-                        else:
-                            recognized_text += predicted_character
-                        self.previous_prediction = None
+                if predicted_character == 'space':
+                    recognized_text += ' '
+                elif predicted_character == 'delete':
+                    recognized_text = recognized_text[:-1]
                 else:
-                    self.previous_prediction = predicted_character
-                    self.start_time = time.time()
+                    recognized_text += predicted_character
 
             cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
             cv2.putText(img, predicted_character, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)
