@@ -61,7 +61,7 @@ start_time = None
 recognized_text = ""
 
 if st.session_state.run_webcam:
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(0, cv2.CAP_V4L)
 
     while st.session_state.run_webcam:
         ret, frame = cap.read()
