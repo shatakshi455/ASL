@@ -1,7 +1,5 @@
 streamlit
 numpy
 pandas
-pickle
-cv2
+opencv-python
 mediapipe
-time
