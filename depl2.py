@@ -62,7 +62,8 @@ recognized_text = ""
 
 if st.session_state.run_webcam:
     cap = cv2.VideoCapture(0)
-
+    if not cap.isOpened():
+        st.error("Cannot access webcam. Please check permissions or device availability.")
     while st.session_state.run_webcam:
         ret, frame = cap.read()
         if not ret:
