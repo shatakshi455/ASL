@@ -53,7 +53,7 @@ def test_prediction_accuracy(load_data):
     y_predict = model.predict(x_test)
     accuracy = accuracy_score(y_test, y_predict)
 
-    assert accuracy > 0.5, f"Accuracy is too low: {accuracy * 100:.2f}%"
+    assert accuracy > 0.9, f"Accuracy is too low: {accuracy * 100:.2f}%"
 
 
 def test_cross_validation(load_data):
@@ -67,7 +67,7 @@ def test_cross_validation(load_data):
     
     cv_scores = cross_val_score(model, x_train, y_train, cv=5)
     
-    assert cv_scores.mean() > 0.5, f"Cross-validation score is too low: {cv_scores.mean() * 100:.2f}%"
+    assert cv_scores.mean() > 0.9, f"Cross-validation score is too low: {cv_scores.mean() * 100:.2f}%"
 
 
 @patch("pickle.dump")
