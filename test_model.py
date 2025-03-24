@@ -4,6 +4,9 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import os
+import absl.logging
+import pytest
+import warnings
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow info/warning logs
 # Load trained model
@@ -108,6 +111,4 @@ def test_model_prediction(image_file):
     # Assert prediction matches expected label
     assert predicted_character == expected_label, f"Mismatch! Expected {expected_label}, but got {predicted_character}"
 
-if __name__ == "__main__":
-    import pytest
-    pytest.main(["-v"])
+ 
