@@ -41,7 +41,7 @@ def train_model(data, labels):
 
     return model
 
-def save_model(model, filename="model_scaler3.p"):
+def save_model(model, filename="model_scaler.p"):
     """Saves the trained model."""
     with open(filename, 'wb') as f:
         pickle.dump({'model': model}, f)
