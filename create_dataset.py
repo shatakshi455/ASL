@@ -31,9 +31,6 @@ def create_dataset():
         print(f"Processing class: {dir_}")
 
         for img_path in os.listdir(os.path.join(DATA_DIR, dir_)):
-            counter += 1
-            if counter % 20 != 0:
-                continue
 
             data_aux = []  # Reset for each image ✅
             x_, y_, z_ = [], [], []
