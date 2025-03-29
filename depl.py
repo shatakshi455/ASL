@@ -1,13 +1,10 @@
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
-import av
 import cv2
 import mediapipe as mp
 import numpy as np
 import pickle
-import time
 
-# Your existing processing functions remain the same
+# Helper functions remain the same
 def dist(l1, l2):
     return ((l1[0] - l2[0])**2 + (l1[1] - l2[1])**2)**0.5
 
@@ -21,11 +18,11 @@ def calculate_angle(v1, v2):
 # Load model
 with open('./model_scaler.p', 'rb') as f:
     model_dict = pickle.load(f)
-
 model = model_dict['model']
 
-# Constants and setup
+# MediaPipe setup
 mp_hands = mp.solutions.hands
+hands = mp_hands.Hands(static_image_mode=True, max_num_hands=1, min_detection_confidence=0.6)
 offset = 20
 
 # Labels dictionary
@@ -35,128 +32,89 @@ labels_dict = {
     20: 'T', 21: 'U', 22: 'V', 23: 'W', 24: 'X', 25: 'Y', 26: 'Z', 27: 'delete'
 }
 
-# Create a video processor class
-class ASLVideoProcessor(VideoProcessorBase):
-    def __init__(self):
-        self.hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, min_detection_confidence=0.6)
-        self.previous_prediction = None
-        self.start_time = time.time()
-        self.recognized_text = ""
+def process_image(uploaded_file):
+    # Read image
+    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    img = cv2.imdecode(file_bytes, 1)
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    
+    # Process image
+    results = hands.process(img_rgb)
+    predicted_char = "No hand detected"
+    
+    if results.multi_hand_landmarks:
+        hand_landmarks = results.multi_hand_landmarks[0]
+        h, w, _ = img.shape
         
-    def recv(self, frame):
-        img = frame.to_ndarray(format="bgr24")
+        # Landmark processing (same as original)
+        x_min, y_min, x_max, y_max = w, h, 0, 0
+        for landmark in hand_landmarks.landmark:
+            x, y = int(landmark.x * w), int(landmark.y * h)
+            x_min, y_min = min(x_min, x), min(y_min, y)
+            x_max, y_max = max(x_max, x), max(y_max, y)
         
-        # Process the frame (similar to your existing code)
-        imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = self.hands.process(imgRGB)
+        # Feature extraction (same as original)
+        data_aux = []
+        x_, y_, z_ = [], [], []
+        landmarks = []
         
-        predicted_character = "None"
+        for i in range(21):
+            x = hand_landmarks.landmark[i].x
+            y = hand_landmarks.landmark[i].y
+            z = hand_landmarks.landmark[i].z
+            x_.append(x)
+            y_.append(y)
+            z_.append(z)
+            landmarks.append((x, y, z))
         
-        if results.multi_hand_landmarks:
-            # Your existing hand processing code
-            hand_landmarks = results.multi_hand_landmarks[0]
-            h, w, _ = img.shape
-            x_min, y_min, x_max, y_max = w, h, 0, 0
+        min_x, min_y, min_z = min(x_), min(y_), min(z_)
+        for i in range(21):
+            data_aux.append(x_[i]/min_x)
+            data_aux.append(y_[i]/min_y)
+            data_aux.append(z_[i]/min_z)
+        
+        # Angle calculation
+        finger_joints = [(4, 1, 8, 5), (8, 5, 12, 9), (12, 9, 16, 13), (16, 13, 20, 17)]
+        for joint in finger_joints:
+            v1 = np.subtract(landmarks[joint[0]], landmarks[joint[1]])
+            v2 = np.subtract(landmarks[joint[2]], landmarks[joint[3]])
+            data_aux.append(calculate_angle(v1, v2))
+        
+        data_aux = np.array(data_aux).reshape(1, -1)
+        
+        # Prediction
+        if data_aux.shape[1] == 67:
+            prediction = model.predict(data_aux)
+            predicted_index = int(prediction[0])
+            predicted_char = labels_dict[predicted_index]
 
-            for landmark in hand_landmarks.landmark:
-                x, y = int(landmark.x * w), int(landmark.y * h)
-                x_min, y_min = min(x_min, x), min(y_min, y)
-                x_max, y_max = max(x_max, x), max(y_max, y)
-
-            x_min, y_min = max(0, x_min - offset), max(0, y_min - offset)
-            x_max, y_max = min(w, x_max + offset), min(h, y_max + offset)
-
-            data_aux = []
-            x_, y_, z_ = [], [], []
-            landmarks = []
-
-            for i in range(21):
-                x = hand_landmarks.landmark[i].x
-                y = hand_landmarks.landmark[i].y
-                z = hand_landmarks.landmark[i].z
-
-                x_.append(x)
-                y_.append(y)
-                z_.append(z)
-                landmarks.append((x, y, z))
-
-            min_x, min_y, min_z = min(x_), min(y_), min(z_)
-            for i in range(21):
-                data_aux.append(x_[i]/min_x)
-                data_aux.append(y_[i]/ min_y)
-                data_aux.append(z_[i]/ min_z)
-
-            finger_joints = [(4, 1, 8, 5), (8, 5, 12, 9), (12, 9, 16, 13), (16, 13, 20, 17)]
-            for joint in finger_joints:
-                v1 = np.subtract(landmarks[joint[0]], landmarks[joint[1]])
-                v2 = np.subtract(landmarks[joint[2]], landmarks[joint[3]])
-                data_aux.append(calculate_angle(v1, v2))
-
-            data_aux = np.array(data_aux).reshape(1, -1)
-
-            if data_aux.shape[1] == 67:
-                prediction = model.predict(data_aux)
-                predicted_index = int(prediction[0])
-                predicted_character = labels_dict[predicted_index]
-
-                if(predicted_character == 'K' or predicted_character == 'V'):
-                    # Load specialized KV model 
-                    with open('./model_scalerKV.p', 'rb') as f:
-                        model_KV = pickle.load(f)['model']
-
-                    data_auxkv=[]
-                    for i in range(21):
-                        if i != 4:
-                            data_auxkv.append(dist(landmarks[i], landmarks[4]) / min_z)
-                    data_auxkv = np.array(data_auxkv).reshape(1, -1)
-
-                    if data_auxkv.shape[1] == 20:
-                        prediction = model_KV.predict(data_auxkv)
-                        predicted_index = int(prediction[0])
-                        predicted_character = labels_dict[predicted_index]
+            # Special handling for K/V
+            if predicted_char in ['K', 'V']:
+                with open('./model_scalerKV.p', 'rb') as f:
+                    model_KV = pickle.load(f)['model']
                 
-                # Track and update recognized text
-                if predicted_character == self.previous_prediction:
-                    if time.time() - self.start_time >= 2:
-                        if predicted_character == 'space':
-                            self.recognized_text += ' '
-                        elif predicted_character == 'delete':
-                            self.recognized_text = self.recognized_text[:-1]
-                        else:
-                            self.recognized_text += predicted_character
-                        self.previous_prediction = None
-                else:
-                    self.previous_prediction = predicted_character
-                    self.start_time = time.time()
-            
-            # Draw rectangle and text
-            cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-            cv2.putText(img, predicted_character, (x_min, y_min - 10), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)
-            
-            # Add recognized text to the frame
-            cv2.putText(img, f"Text: {self.recognized_text}", (10, 30), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
-        
-        return av.VideoFrame.from_ndarray(img, format="bgr24")
+                data_auxkv = [dist(landmarks[i], landmarks[4])/min_z 
+                            for i in range(21) if i != 4]
+                data_auxkv = np.array(data_auxkv).reshape(1, -1)
+                
+                if data_auxkv.shape[1] == 20:
+                    prediction_kv = model_KV.predict(data_auxkv)
+                    predicted_char = labels_dict[int(prediction_kv[0])]
+
+        # Draw annotations
+        x_min, y_min = max(0, x_min - offset), max(0, y_min - offset)
+        x_max, y_max = min(w, x_max + offset), min(h, y_max + offset)
+        cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+        cv2.putText(img, predicted_char, (x_min, y_min - 10), 
+                  cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3)
+    
+    return img, predicted_char
 
 # Streamlit UI
-st.title("GestureSpeak: ASL Hand Gesture Recognition")
-st.write("Show an ASL hand sign to recognize it.")
+st.title("GestureSpeak: ASL Image Recognition")
+uploaded_file = st.file_uploader("Upload ASL hand image", type=["jpg", "png", "jpeg"])
 
-# Create a placeholder for the recognized text
-text_placeholder = st.empty()
-
-# Initialize the WebRTC component
-webrtc_ctx = webrtc_streamer(
-    key="asl-recognition",
-    video_processor_factory=ASLVideoProcessor,
-    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-    media_stream_constraints={"video": True, "audio": False},
-)
-
-# Update the recognized text display
-if webrtc_ctx.video_processor:
-    if hasattr(webrtc_ctx.video_processor, "recognized_text"):
-        text_placeholder.subheader(f"Recognized Text: **{webrtc_ctx.video_processor.recognized_text}**")
-
+if uploaded_file is not None:
+    processed_img, prediction = process_image(uploaded_file)
+    st.image(processed_img, channels="BGR", caption="Processed Image")
+    st.subheader(f"Predicted Character: {prediction}")
