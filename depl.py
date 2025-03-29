@@ -1,10 +1,13 @@
 import streamlit as st
-import pickle
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
+import av
 import cv2
 import mediapipe as mp
 import numpy as np
+import pickle
 import time
 
+# Your existing processing functions remain the same
 def dist(l1, l2):
     return ((l1[0] - l2[0])**2 + (l1[1] - l2[1])**2)**0.5
 
@@ -15,71 +18,44 @@ def calculate_angle(v1, v2):
     angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
     return np.degrees(angle)
 
-# Load trained model
+# Load model
 with open('./model_scaler.p', 'rb') as f:
     model_dict = pickle.load(f)
 
 model = model_dict['model']
 
-# Constants
+# Constants and setup
+mp_hands = mp.solutions.hands
 offset = 20
 
-# Mediapipe Hands
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, min_detection_confidence=0.6)
-
-# Labels
+# Labels dictionary
 labels_dict = {
     0:'space', 1: 'A', 2: 'B', 3: 'C', 4: 'D', 5: 'E', 6: 'F', 7: 'G', 8: 'H', 9: 'I', 10: 'J',
     11: 'K', 12: 'L', 13: 'M', 14: 'N', 15: 'O', 16: 'P', 17: 'Q', 18: 'R', 19: 'S',
     20: 'T', 21: 'U', 22: 'V', 23: 'W', 24: 'X', 25: 'Y', 26: 'Z', 27: 'delete'
 }
 
-
-# Streamlit UI
-st.title("GestureSpeak: ASL Hand Gesture Recognition")
-st.write("Show an ASL hand sign to recognize it. Press **Stop Webcam** to quit.")
-
-# Webcam state
-if "run_webcam" not in st.session_state:
-    st.session_state.run_webcam = False
-
-# Button Controls
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("Start Webcam"):
-        st.session_state.run_webcam = True
-with col2:
-    if st.button("Stop Webcam"):
-        st.session_state.run_webcam = False
-
-# Video and output display
-stframe = st.empty()
-prediction_text = st.empty()
-result_text = st.empty()
-
-# Track previous prediction and time
-previous_prediction = None
-start_time = None
-recognized_text = ""
-
-if st.session_state.run_webcam:
-    cap = cv2.VideoCapture(0)
-
-    while st.session_state.run_webcam:
-        ret, frame = cap.read()
-        if not ret:
-            st.error("Failed to capture image.")
-            break
-
-        imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = hands.process(imgRGB)
-
+# Create a video processor class
+class ASLVideoProcessor(VideoProcessorBase):
+    def __init__(self):
+        self.hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, min_detection_confidence=0.6)
+        self.previous_prediction = None
+        self.start_time = time.time()
+        self.recognized_text = ""
+        
+    def recv(self, frame):
+        img = frame.to_ndarray(format="bgr24")
+        
+        # Process the frame (similar to your existing code)
+        imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        results = self.hands.process(imgRGB)
+        
         predicted_character = "None"
-
+        
         if results.multi_hand_landmarks:
+            # Your existing hand processing code
             hand_landmarks = results.multi_hand_landmarks[0]
-            h, w, _ = frame.shape
+            h, w, _ = img.shape
             x_min, y_min, x_max, y_max = w, h, 0, 0
 
             for landmark in hand_landmarks.landmark:
@@ -124,44 +100,63 @@ if st.session_state.run_webcam:
                 predicted_character = labels_dict[predicted_index]
 
                 if(predicted_character == 'K' or predicted_character == 'V'):
-                        #  Load specialized KV model 
-                        with open('./model_scalerKV.p', 'rb') as f:
-                           model_KV = pickle.load(f)['model']
+                    # Load specialized KV model 
+                    with open('./model_scalerKV.p', 'rb') as f:
+                        model_KV = pickle.load(f)['model']
 
-                        data_auxkv=[]
-                        for i in range(21):
-                            if i != 4:
-                                data_auxkv.append(dist(landmarks[i], landmarks[4]) / min_z)
-                        data_auxkv = np.array(data_auxkv).reshape(1, -1)
+                    data_auxkv=[]
+                    for i in range(21):
+                        if i != 4:
+                            data_auxkv.append(dist(landmarks[i], landmarks[4]) / min_z)
+                    data_auxkv = np.array(data_auxkv).reshape(1, -1)
 
-                        if data_auxkv.shape[1] == 20:
-                            prediction = model_KV.predict(data_auxkv)
-                            predicted_index = int(prediction[0])
-                            predicted_character = labels_dict[predicted_index]
-                        
-                # Track and print if character is stable for 2 seconds
-                if predicted_character == previous_prediction:
-                    if time.time() - start_time >= 2:
-                        if(predicted_character == 'space'):
-                            recognized_text+=' '
+                    if data_auxkv.shape[1] == 20:
+                        prediction = model_KV.predict(data_auxkv)
+                        predicted_index = int(prediction[0])
+                        predicted_character = labels_dict[predicted_index]
+                
+                # Track and update recognized text
+                if predicted_character == self.previous_prediction:
+                    if time.time() - self.start_time >= 2:
+                        if predicted_character == 'space':
+                            self.recognized_text += ' '
+                        elif predicted_character == 'delete':
+                            self.recognized_text = self.recognized_text[:-1]
                         else:
-                            if(predicted_character == 'delete'):
-                                recognized_text = recognized_text[:-1]
-                            else:
-                                recognized_text += predicted_character
-                        previous_prediction = None
+                            self.recognized_text += predicted_character
+                        self.previous_prediction = None
                 else:
-                    previous_prediction = predicted_character
-                    start_time = time.time()
-            else:
-                print("Incorrect number of features")
+                    self.previous_prediction = predicted_character
+                    self.start_time = time.time()
+            
+            # Draw rectangle and text
+            cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+            cv2.putText(img, predicted_character, (x_min, y_min - 10), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)
+            
+            # Add recognized text to the frame
+            cv2.putText(img, f"Text: {self.recognized_text}", (10, 30), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+        
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
 
-            cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-            cv2.putText(frame, predicted_character, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)
+# Streamlit UI
+st.title("GestureSpeak: ASL Hand Gesture Recognition")
+st.write("Show an ASL hand sign to recognize it.")
 
-        stframe.image(frame, channels="BGR")
-        prediction_text.subheader(f"Predicted Character: **{predicted_character}**")
-        result_text.subheader(f"Recognized Text: **{recognized_text}**")
+# Create a placeholder for the recognized text
+text_placeholder = st.empty()
 
-    cap.release()
-    cv2.destroyAllWindows()
+# Initialize the WebRTC component
+webrtc_ctx = webrtc_streamer(
+    key="asl-recognition",
+    video_processor_factory=ASLVideoProcessor,
+    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+    media_stream_constraints={"video": True, "audio": False},
+)
+
+# Update the recognized text display
+if webrtc_ctx.video_processor:
+    if hasattr(webrtc_ctx.video_processor, "recognized_text"):
+        text_placeholder.subheader(f"Recognized Text: **{webrtc_ctx.video_processor.recognized_text}**")
+
