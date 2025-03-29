@@ -5,6 +5,9 @@ import mediapipe as mp
 import numpy as np
 import time
 
+def dist(l1, l2):
+    return ((l1[0] - l2[0])**2 + (l1[1] - l2[1])**2)**0.5
+
 def calculate_angle(v1, v2):
     v1 = np.array(v1)
     v2 = np.array(v2)
@@ -61,7 +64,7 @@ start_time = None
 recognized_text = ""
 
 if st.session_state.run_webcam:
-    cap = cv2.VideoCapture(0, cv2.CAP_V4L)
+    cap = cv2.VideoCapture(0)
 
     while st.session_state.run_webcam:
         ret, frame = cap.read()
@@ -120,6 +123,22 @@ if st.session_state.run_webcam:
                 predicted_index = int(prediction[0])
                 predicted_character = labels_dict[predicted_index]
 
+                if(predicted_character == 'K' or predicted_character == 'V'):
+                        #  Load specialized KV model 
+                        with open('./model_scalerKV.p', 'rb') as f:
+                           model_KV = pickle.load(f)['model']
+
+                        data_auxkv=[]
+                        for i in range(21):
+                            if i != 4:
+                                data_auxkv.append(dist(landmarks[i], landmarks[4]) / min_z)
+                        data_auxkv = np.array(data_auxkv).reshape(1, -1)
+
+                        if data_auxkv.shape[1] == 20:
+                            prediction = model_KV.predict(data_auxkv)
+                            predicted_index = int(prediction[0])
+                            predicted_character = labels_dict[predicted_index]
+                        
                 # Track and print if character is stable for 2 seconds
                 if predicted_character == previous_prediction:
                     if time.time() - start_time >= 2:

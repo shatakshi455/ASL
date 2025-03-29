@@ -61,7 +61,7 @@ start_time = None
 recognized_text = ""
 
 if st.session_state.run_webcam:
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(0, cv2.CAP_V4L)
 
     while st.session_state.run_webcam:
         ret, frame = cap.read()
@@ -119,38 +119,6 @@ if st.session_state.run_webcam:
                 prediction = model.predict(data_aux)
                 predicted_index = int(prediction[0])
                 predicted_character = labels_dict[predicted_index]
-
-                if(predicted_character == 'K' or predicted_character == 'V'):
-                                        # --- Load specialized KV model ---
-                        with open('./model_scalerKV.p', 'rb') as f:
-                           model_KV = pickle.load(f)['model']
-
-                        # --- Feature extraction for KV only ---
-                        thumb_tip = landmarks[4]
-                        thumb_base = landmarks[2]
-                        index_tip = landmarks[8]
-                        index_base = landmarks[5]
-                        palm_center = landmarks[0]
-
-                        # --- Angle and Distance Features ---
-                        def angle_between_lines(p1, p2, p3, p4):
-                            v1 = np.array(p1) - np.array(p2)
-                            v2 = np.array(p3) - np.array(p4)
-                            cosine = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6)
-                            angle = np.arccos(np.clip(cosine, -1.0, 1.0))
-                            return np.degrees(angle)
-
-                        def normalized_distance(p1, p2, scale):
-                            dist = np.linalg.norm(np.array(p1) - np.array(p2))
-                            return dist / (scale + 1e-6)
-
-                        angle = angle_between_lines(thumb_tip, thumb_base, index_tip, index_base)
-                        scale = abs(palm_center[2]) + 1e-6
-                        thumb_palm_dist = normalized_distance(thumb_tip[:2], palm_center[:2], scale)
-
-                        X = np.array([[angle]])
-                        pred = model_KV.predict(X)[0]
-                        predicted_character = 'K' if pred == '10' else 'V'
 
                 # Track and print if character is stable for 2 seconds
                 if predicted_character == previous_prediction:

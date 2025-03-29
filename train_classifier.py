@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score
 
 def load_dataset():
     """Loads dataset from pickle file."""
-    with open('./dataset1.pickle', 'rb') as f:
+    with open('./dataset.pickle', 'rb') as f:
         data_dict = pickle.load(f)
 
     data = np.asarray(data_dict['data'])  # Shape: (samples, features)

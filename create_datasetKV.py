@@ -1,69 +1,83 @@
 import os
+import pickle
 import cv2
 import mediapipe as mp
 import numpy as np
-import pickle
 
-# --- Mediapipe ---
+# Initialize Mediapipe Hands
 mp_hands = mp.solutions.hands
+hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
-# --- Feature Functions ---
-def angle_between_lines(p1, p2, p3, p4):
-    v1 = np.array(p1) - np.array(p2)
-    v2 = np.array(p3) - np.array(p4)
-    cosine = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6)
-    angle = np.arccos(np.clip(cosine, -1.0, 1.0))
+# Data directory
+DATA_DIR = './data'
+
+
+def calculate_angle(v1, v2):
+    v1 = np.array(v1)
+    v2 = np.array(v2)
+    cosine_angle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+    angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
     return np.degrees(angle)
 
-def standardised_distance(p1, p2, ref1, ref2):
-    dist = np.linalg.norm(np.array(p1) - np.array(p2))
-    scale = np.linalg.norm(np.array(ref1) - np.array(ref2)) + 1e-6
-    return dist / scale
 
-# --- Dataset Directory ---
-data_dir = 'data/'
+def dist(l1, l2):
+    return ((l1[0] - l2[0])**2 + (l1[1] - l2[1])**2)**0.5
 
-# --- Only use 10 and 21 folders ---
-labels = [folder for folder in os.listdir(data_dir) if folder in ['10', '21']]
 
-features = []
-targets = []
+def create_dataset():
+    data = []
+    labels = []
 
-with mp_hands.Hands(static_image_mode=True, max_num_hands=1) as hands:
-    for label in labels:
-        folder_path = os.path.join(data_dir, label)
-        for img_name in os.listdir(folder_path):
-            img_path = os.path.join(folder_path, img_name)
-            img = cv2.imread(img_path)
+    # Only process '11' and '22' folders
+    for dir_ in ['11', '22']:
+        print(f"Processing class: {dir_}")
+
+        for img_path in os.listdir(os.path.join(DATA_DIR, dir_)):
+            data_aux = []
+            x_, y_, z_ = [], [], []
+            landmarks = []
+
+            # Load image
+            img = cv2.imread(os.path.join(DATA_DIR, dir_, img_path))
             if img is None:
+                print(f"Skipping corrupted image: {img_path}")
                 continue
-            
-            h, w, _ = img.shape
-            rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            results = hands.process(rgb)
+
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            results = hands.process(img_rgb)
 
             if results.multi_hand_landmarks:
                 hand_landmarks = results.multi_hand_landmarks[0]
-                landmarks = [(lm.x * w, lm.y * h) for lm in hand_landmarks.landmark]
-                
-                # --- Landmarks ---
-                thumb_tip = landmarks[4]
-                thumb_base = landmarks[2]
-                index_tip = landmarks[8]
-                index_base = landmarks[5]
-                palm_center = landmarks[0]
 
-                # --- Features ---
-                angle = angle_between_lines(thumb_tip, thumb_base, index_tip, index_base)
-                #thumb_palm_dist = standardised_distance(thumb_tip, palm_center, palm_center, index_base)
+                for i in range(21):
+                    x = hand_landmarks.landmark[i].x
+                    y = hand_landmarks.landmark[i].y
+                    z = hand_landmarks.landmark[i].z
 
-                features.append([angle])
-                targets.append(label)
+                    x_.append(x)
+                    y_.append(y)
+                    z_.append(z)
+                    landmarks.append((x, y, z))
 
-print(f"Total Samples Collected: {len(features)}")
+                # Normalize features
+                min_x, min_y, min_z = min(x_), min(y_), min(z_)
+                for i in range(21):
+                    if i != 4:
+                        data_aux.append(dist(landmarks[i], landmarks[4]) / min_z)
 
-# --- Save dataset ---
-with open('datasetKV.pickle', 'wb') as f:
-    pickle.dump({'data': features, 'labels': targets}, f)
+                if len(data_aux) == 20:
+                    data.append(data_aux)
+                    labels.append(dir_)
+                else:
+                    print(f"Skipping {img_path} due to incorrect feature length: {len(data_aux)}")
 
-print("Saved features to datasetKV.pickle ✅")
+    # Save dataset
+    with open('datasetKV.pickle', 'wb') as f:
+        pickle.dump({'data': data, 'labels': labels}, f)
+
+    print(f"Dataset saved with {len(data)} samples.")
+    return data, labels
+
+
+if __name__ == "__main__":
+    create_dataset()

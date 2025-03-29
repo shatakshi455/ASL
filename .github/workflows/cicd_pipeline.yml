@@ -26,14 +26,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run dataset creation
+      - name: Create regular dataset
         run: python create_dataset.py
+
+      - name: Create KV dataset
+        run: python create_datasetKV.py
 
       - name: Train the classifier
         run: python train_classifier.py
 
+      - name: Train the KV classifier
+        run: python trainKV_classifier.py
+
       - name: Run tests
-        run: pytest tests/
+        run: pytest -v tests/
 
   deploy:
     runs-on: ubuntu-latest
@@ -55,5 +61,8 @@ jobs:
           pip install streamlit
 
       - name: Deploy with Streamlit
-        run: streamlit run depl2.py
-
+        run: |
+          streamlit run depl.py &
+          sleep 5
+          echo "Stopping Streamlit after 5 seconds."
+          pkill -f "streamlit run depl.py"

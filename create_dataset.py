@@ -89,7 +89,7 @@ def create_dataset():
                     print(f"Skipping {img_path} due to incorrect feature length: {len(data_aux)}")
 
     # Save dataset
-    with open('dataset1.pickle', 'wb') as f:
+    with open('dataset.pickle', 'wb') as f:
         pickle.dump({'data': data, 'labels': labels}, f)
 
     print(f"Dataset saved with {len(data)} samples.")
