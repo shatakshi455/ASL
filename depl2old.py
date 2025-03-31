@@ -12,6 +12,37 @@ def calculate_angle(v1, v2):
     angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
     return np.degrees(angle)
 
+def get_point(landmark):
+    return (landmark.x, landmark.y)
+
+def ccw(A, B, C):
+    return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
+
+def lines_intersect(p1, p2, q1, q2):
+    return ccw(p1, q1, q2) != ccw(p2, q1, q2) and ccw(p1, p2, q1) != ccw(p1, p2, q2)
+
+def check_intersections(landmarks):
+    """
+    landmarks: hand_landmarks.landmark (direct from MediaPipe)
+    """
+    p1, p2 = get_point(landmarks[6]), get_point(landmarks[7])
+    q1, q2 = get_point(landmarks[10]), get_point(landmarks[11])
+
+    r1, r2 = get_point(landmarks[7]), get_point(landmarks[8])
+    s1, s2 = get_point(landmarks[11]), get_point(landmarks[12])
+
+    t1, t2 = get_point(landmarks[7]), get_point(landmarks[8])
+    u1, u2 = get_point(landmarks[10]), get_point(landmarks[11])
+
+    if lines_intersect(p1, p2, q1, q2):
+        return 1
+    if lines_intersect(r1, r2, s1, s2):
+        return 1
+    if lines_intersect(t1, t2, u1, u2):
+        return 1
+    return 0
+
+
 # Load trained model
 with open('./model_scaler.p', 'rb') as f:
     model_dict = pickle.load(f)
@@ -120,11 +151,27 @@ if st.session_state.run_webcam:
                 predicted_index = int(prediction[0])
                 predicted_character = labels_dict[predicted_index]
 
-                if(predicted_character == 'K' or predicted_character == 'V'):
+                if(predicted_character == 'M' or predicted_character == 'N'):
+                     x = (hand_landmarks.landmark[16].x - hand_landmarks.landmark[12].x)
+                     y = (hand_landmarks.landmark[16].y - hand_landmarks.landmark[12].y)
+
+                     with open('./model_scalerMN.p', 'rb') as f:
+                           model_MN = pickle.load(f)['model']
+                     
+                     
+                     X = np.array([[x,y]])
+                     pred = model_MN.predict(X)[0]
+                     predicted_character = 'M' if pred == '13' else 'N'
+                    
+                elif(predicted_character == 'K' or predicted_character == 'V' or predicted_character == 'R'):
                                         # --- Load specialized KV model ---
+                    if(check_intersections(hand_landmarks.landmark) == 1):
+                        predicted_character = 'R'
+                    else:
                         with open('./model_scalerKV.p', 'rb') as f:
                            model_KV = pickle.load(f)['model']
 
+            
                         # --- Feature extraction for KV only ---
                         thumb_tip = landmarks[4]
                         thumb_base = landmarks[2]
@@ -140,21 +187,15 @@ if st.session_state.run_webcam:
                             angle = np.arccos(np.clip(cosine, -1.0, 1.0))
                             return np.degrees(angle)
 
-                        def normalized_distance(p1, p2, scale):
-                            dist = np.linalg.norm(np.array(p1) - np.array(p2))
-                            return dist / (scale + 1e-6)
-
                         angle = angle_between_lines(thumb_tip, thumb_base, index_tip, index_base)
-                        scale = abs(palm_center[2]) + 1e-6
-                        thumb_palm_dist = normalized_distance(thumb_tip[:2], palm_center[:2], scale)
-
+                         
                         X = np.array([[angle]])
                         pred = model_KV.predict(X)[0]
-                        predicted_character = 'K' if pred == '10' else 'V'
+                        predicted_character = 'K' if pred == '11' else 'V'
 
                 # Track and print if character is stable for 2 seconds
                 if predicted_character == previous_prediction:
-                    if time.time() - start_time >= 2:
+                    if time.time() - start_time >= 1:
                         if(predicted_character == 'space'):
                             recognized_text+=' '
                         else:
@@ -162,6 +203,7 @@ if st.session_state.run_webcam:
                                 recognized_text = recognized_text[:-1]
                             else:
                                 recognized_text += predicted_character
+                        cv2.putText(frame, predicted_character + 'is detected', (300, 150), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)
                         previous_prediction = None
                 else:
                     previous_prediction = predicted_character

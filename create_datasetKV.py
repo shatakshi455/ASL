@@ -24,7 +24,7 @@ def standardised_distance(p1, p2, ref1, ref2):
 data_dir = 'data/'
 
 # --- Only use 10 and 21 folders ---
-labels = [folder for folder in os.listdir(data_dir) if folder in ['10', '21']]
+labels = [folder for folder in os.listdir(data_dir) if folder in ['11', '22']]
 
 features = []
 targets = []
