@@ -8,7 +8,7 @@ import pickle
 mp_hands = mp.solutions.hands
 
 # --- Dataset Directory ---
-data_dir = '../data/'
+data_dir = 'data/'
 
 # --- Only use 10 and 21 folders ---
 labels = [folder for folder in os.listdir(data_dir) if folder in ['13', '14']]
@@ -39,7 +39,7 @@ with mp_hands.Hands(static_image_mode=True, max_num_hands=1) as hands:
 print(f"Total Samples Collected: {len(features)}")
 
 # --- Save dataset ---
-with open('../datasets/datasetMN.pickle', 'wb') as f:
+with open('datasets/datasetMN.pickle', 'wb') as f:
     pickle.dump({'data': features, 'labels': targets}, f)
 
 print("Saved features to datasetKV.pickle ✅")
