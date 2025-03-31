@@ -10,7 +10,7 @@ mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3)
 
 # Data directory
-DATA_DIR = './data'
+DATA_DIR = '../data'
 
 def calculate_angle(v1, v2):
     """Calculate the angle (in degrees) between two vectors using the dot product formula."""
@@ -89,7 +89,7 @@ def create_dataset():
                     print(f"Skipping {img_path} due to incorrect feature length: {len(data_aux)}")
 
     # Save dataset
-    with open('dataset1.pickle', 'wb') as f:
+    with open('../datasets/dataset_main.pickle', 'wb') as f:
         pickle.dump({'data': data, 'labels': labels}, f)
 
     print(f"Dataset saved with {len(data)} samples.")

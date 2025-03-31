@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score
 
 def load_dataset():
     """Loads dataset from pickle file."""
-    with open('./dataset1.pickle', 'rb') as f:
+    with open('../datasets/dataset_main.pickle', 'rb') as f:
         data_dict = pickle.load(f)
 
     data = np.asarray(data_dict['data'])  # Shape: (samples, features)
@@ -41,7 +41,7 @@ def train_model(data, labels):
 
     return model
 
-def save_model(model, filename="model_scaler.p"):
+def save_model(model, filename="../models/model_main.p"):
     """Saves the trained model."""
     with open(filename, 'wb') as f:
         pickle.dump({'model': model}, f)
