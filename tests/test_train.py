@@ -12,7 +12,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 @pytest.fixture
 def load_data():
     """Fixture to load dataset for testing."""
-    with open('./dataset1.pickle', 'rb') as f:
+    with open('datasets/dataset_main.pickle', 'rb') as f:
         data_dict = pickle.load(f)
 
     data = np.asarray(data_dict['data'])

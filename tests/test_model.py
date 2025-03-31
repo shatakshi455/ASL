@@ -10,7 +10,7 @@ import warnings
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow info/warning logs
 # Load trained model
-with open('./model_scaler.p', 'rb') as f:
+with open('models/model_main.p', 'rb') as f:
     model_dict = pickle.load(f)
 
 model = model_dict['model']

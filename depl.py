@@ -16,7 +16,7 @@ def calculate_angle(v1, v2):
     return np.degrees(angle)
 
 # Load model
-with open('./model_scaler.p', 'rb') as f:
+with open('models/model_main.p', 'rb') as f:
     model_dict = pickle.load(f)
 model = model_dict['model']
 
@@ -90,7 +90,7 @@ def process_image(uploaded_file):
 
             # Special handling for K/V
             if predicted_char in ['K', 'V']:
-                with open('./model_scalerKV.p', 'rb') as f:
+                with open('models/model_scalerKV.p', 'rb') as f:
                     model_KV = pickle.load(f)['model']
                 
                 data_auxkv = [dist(landmarks[i], landmarks[4])/min_z 

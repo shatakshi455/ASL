@@ -44,7 +44,7 @@ def check_intersections(landmarks):
 
 
 # Load trained model
-with open('./model_scaler.p', 'rb') as f:
+with open('models/model_main.p', 'rb') as f:
     model_dict = pickle.load(f)
 
 model = model_dict['model']
@@ -155,7 +155,7 @@ if st.session_state.run_webcam:
                      x = (hand_landmarks.landmark[16].x - hand_landmarks.landmark[12].x)
                      y = (hand_landmarks.landmark[16].y - hand_landmarks.landmark[12].y)
 
-                     with open('./model_scalerMN.p', 'rb') as f:
+                     with open('models/model_scalerMN.p', 'rb') as f:
                            model_MN = pickle.load(f)['model']
                      
                      
@@ -168,7 +168,7 @@ if st.session_state.run_webcam:
                     if(check_intersections(hand_landmarks.landmark) == 1):
                         predicted_character = 'R'
                     else:
-                        with open('./model_scalerKV.p', 'rb') as f:
+                        with open('models/model_scalerKV.p', 'rb') as f:
                            model_KV = pickle.load(f)['model']
 
             

@@ -41,9 +41,9 @@ jobs:
 
       - name: Run tests
         run: |
-         pytest tests/test_dataset.py
-         pytest tests/test_model.py
-         pytest tests/test_train.py
+         pytest -v tests/test_dataset.py
+         pytest -v tests/test_model.py
+         pytest -v tests/test_train.py
 
 
   deploy:
