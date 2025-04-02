@@ -74,4 +74,8 @@ jobs:
           sleep 10
           echo "Stopping Streamlit after 10 seconds."
           pkill -f "streamlit run depl.py"
+          streamlit run app.py &
+          sleep 10
+          echo "Stopping Streamlit after 10 seconds."
+          pkill -f "streamlit run app.py"
 
