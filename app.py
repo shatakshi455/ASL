@@ -89,7 +89,10 @@ result_text = st.empty()
 # Track previous prediction and time
 previous_prediction = None
 start_time = None
-recognized_text = ""
+
+if "recognized_text" not in st.session_state:
+    st.session_state.recognized_text = ""  # Initialize only once
+
 
 if st.session_state.run_webcam:
     cap = cv2.VideoCapture(0)
@@ -195,15 +198,15 @@ if st.session_state.run_webcam:
 
                 # Track and print if character is stable for 2 seconds
                 if predicted_character == previous_prediction:
-                    if time.time() - start_time >= 1:
+                    if time.time() - start_time >= 2:
                         if(predicted_character == 'space'):
-                            recognized_text+=' '
+                            st.session_state.recognized_text+=' '
                         else:
                             if(predicted_character == 'delete'):
-                                recognized_text = recognized_text[:-1]
+                                st.session_state.recognized_text = st.session_state.recognized_text[:-1]
                             else:
-                                recognized_text += predicted_character
-                        cv2.putText(frame, predicted_character + 'is detected', (300, 150), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)
+                                st.session_state.recognized_text += predicted_character
+                        cv2.putText(frame, predicted_character + ' is detected', (300, 150), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)
                         previous_prediction = None
                 else:
                     previous_prediction = predicted_character
@@ -216,7 +219,11 @@ if st.session_state.run_webcam:
 
         stframe.image(frame, channels="BGR")
         prediction_text.subheader(f"Predicted Character: **{predicted_character}**")
-        result_text.subheader(f"Recognized Text: **{recognized_text}**")
+        result_text.subheader(f"Recognized Text: **{st.session_state.recognized_text}**")
 
     cap.release()
     cv2.destroyAllWindows()
+# Display final recognized text after webcam stops
+if not st.session_state.run_webcam:
+    st.subheader(f"Final Recognized Text: **{st.session_state.recognized_text}**")
+
