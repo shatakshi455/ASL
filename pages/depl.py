@@ -3,6 +3,14 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import pickle
+import streamlit_extras.switch_page_button as switch
+
+
+st.set_page_config(page_title="Deploy Page", layout="wide")
+
+# Custom Sidebar Navigation
+st.sidebar.title("📌 Navigation Menu")
+
 
 def calculate_angle(v1, v2):
     v1 = np.array(v1)

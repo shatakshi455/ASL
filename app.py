@@ -4,7 +4,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
-
+import streamlit_extras.switch_page_button as switch
 def calculate_angle(v1, v2):
     v1 = np.array(v1)
     v2 = np.array(v2)
@@ -42,8 +42,12 @@ def check_intersections(landmarks):
         return 1
     return 0
 
+st.set_page_config(page_title="Main Page", layout="wide")
 
-# Load trained model
+# Sidebar Title ABOVE the menu
+st.sidebar.title("📌 Navigation Menu")
+
+
 with open('models/model_main.p', 'rb') as f:
     model_dict = pickle.load(f)
 

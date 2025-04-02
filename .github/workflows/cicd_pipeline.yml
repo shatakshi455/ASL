@@ -70,8 +70,8 @@ jobs:
         
       - name: Deploy with Streamlit
         run: |
-          streamlit run depl.py &
+          streamlit run pages/depl.py &
           sleep 10
           echo "Stopping Streamlit after 10 seconds."
-          pkill -f "streamlit run depl.py"
+          pkill -f "streamlit run pages/depl.py"
 
