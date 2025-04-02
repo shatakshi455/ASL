@@ -14,35 +14,34 @@ GestureSpeak-Sign-to-Text-Converter (GSSTC) is a machine learning-based applicat
 ## Project Structure
 ```
 GestureSpeak-Sign-to-Text-Converter/
-├──asl_alphabet_test
-├──create_datasets
+├──asl_alphabet_test          # images to test the model
+├──create_datasets            # extracting data from images
    └──create_dataset.py
    └──create_datasetKV.py
    └──create_datasetMN.py
-├──data
-├──datasets
+├──data                       # images used to train the model 
+├──datasets                   # extracted data stored in pickle files
    └──dataset_main.pickle
    └──datasetKV.pickle
    └──datasetMN.pickle
-├──models
+├──models                     # trained models
    └──model_main.pickle
    └──model_scalerKV.pickle
    └──model_scalerMN.pickle
-├──pages
+├──pages                      # other pages of the user interface
    └──depl.py
    └──guide.py
-├──tests
+├──tests                      # testing modules
    └──test_depl.py
    └──test_dataset.py
    └──test_model.py
    └──test_train.py
-├──train_classifiers
+├──train_classifiers          # training the model
    └──train_classifier.py
    └──train_classifierKV.py
    └──train_classifierMN.py
-├──app.py
-├──packages.txt
-└── README.md              # Project documentation
+├──app.py                     # application 
+└── README.md                 # Project documentation
 ```
 
 ## Installation
