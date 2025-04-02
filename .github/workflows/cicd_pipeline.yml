@@ -73,13 +73,9 @@ jobs:
           streamlit run pages/depl.py &
           sleep 10
           echo "Stopping Streamlit after 10 seconds."
-<<<<<<< HEAD
           pkill -f "streamlit run pages/depl.py"
-=======
-          pkill -f "streamlit run depl.py"
           streamlit run app.py &
           sleep 10
           echo "Stopping Streamlit after 10 seconds."
           pkill -f "streamlit run app.py"
->>>>>>> 6e913a664427ad87c84d53bcd72e4153625f4ac5
 
