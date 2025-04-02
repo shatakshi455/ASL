@@ -4,6 +4,43 @@ import mediapipe as mp
 import numpy as np
 import pickle
 
+def calculate_angle(v1, v2):
+    v1 = np.array(v1)
+    v2 = np.array(v2)
+    cosine_angle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+    angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
+    return np.degrees(angle)
+
+def get_point(landmark):
+    return (landmark.x, landmark.y)
+
+def ccw(A, B, C):
+    return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
+
+def lines_intersect(p1, p2, q1, q2):
+    return ccw(p1, q1, q2) != ccw(p2, q1, q2) and ccw(p1, p2, q1) != ccw(p1, p2, q2)
+
+def check_intersections(landmarks):
+    """
+    landmarks: hand_landmarks.landmark (direct from MediaPipe)
+    """
+    p1, p2 = get_point(landmarks[6]), get_point(landmarks[7])
+    q1, q2 = get_point(landmarks[10]), get_point(landmarks[11])
+
+    r1, r2 = get_point(landmarks[7]), get_point(landmarks[8])
+    s1, s2 = get_point(landmarks[11]), get_point(landmarks[12])
+
+    t1, t2 = get_point(landmarks[7]), get_point(landmarks[8])
+    u1, u2 = get_point(landmarks[10]), get_point(landmarks[11])
+
+    if lines_intersect(p1, p2, q1, q2):
+        return 1
+    if lines_intersect(r1, r2, s1, s2):
+        return 1
+    if lines_intersect(t1, t2, u1, u2):
+        return 1
+    return 0
+
 # Helper functions remain the same
 def dist(l1, l2):
     return ((l1[0] - l2[0])**2 + (l1[1] - l2[1])**2)**0.5
@@ -40,7 +77,7 @@ def process_image(uploaded_file):
     
     # Process image
     results = hands.process(img_rgb)
-    predicted_char = "No hand detected"
+    predicted_character = "No hand detected"
     
     if results.multi_hand_landmarks:
         hand_landmarks = results.multi_hand_landmarks[0]
@@ -84,31 +121,60 @@ def process_image(uploaded_file):
         
         # Prediction
         if data_aux.shape[1] == 67:
-            prediction = model.predict(data_aux)
-            predicted_index = int(prediction[0])
-            predicted_char = labels_dict[predicted_index]
+                prediction = model.predict(data_aux)
+                predicted_index = int(prediction[0])
+                predicted_character = labels_dict[predicted_index]
 
-            # Special handling for K/V
-            if predicted_char in ['K', 'V']:
-                with open('models/model_scalerKV.p', 'rb') as f:
-                    model_KV = pickle.load(f)['model']
-                
-                data_auxkv = [dist(landmarks[i], landmarks[4])/min_z 
-                            for i in range(21) if i != 4]
-                data_auxkv = np.array(data_auxkv).reshape(1, -1)
-                
-                if data_auxkv.shape[1] == 20:
-                    prediction_kv = model_KV.predict(data_auxkv)
-                    predicted_char = labels_dict[int(prediction_kv[0])]
+                # if(predicted_character == 'M' or predicted_character == 'N'):
+                #      x = (hand_landmarks.landmark[16].x - hand_landmarks.landmark[12].x)
+                #      y = (hand_landmarks.landmark[16].y - hand_landmarks.landmark[12].y)
+
+                #      with open('models/model_scalerMN.p', 'rb') as f:
+                #            model_MN = pickle.load(f)['model']
+                     
+                     
+                #      X = np.array([[x,y]])
+                #      pred = model_MN.predict(X)[0]
+                #      predicted_character = 'M' if pred == '13' else 'N'
+                    
+                if(predicted_character == 'K' or predicted_character == 'V' or predicted_character == 'R'):
+                                        # --- Load specialized KV model ---
+                    if(check_intersections(hand_landmarks.landmark) == 1):
+                        predicted_character = 'R'
+                    else:
+                        with open('models/model_scalerKV.p', 'rb') as f:
+                           model_KV = pickle.load(f)['model']
+
+            
+                        # --- Feature extraction for KV only ---
+                        thumb_tip = landmarks[4]
+                        thumb_base = landmarks[2]
+                        index_tip = landmarks[8]
+                        index_base = landmarks[5]
+                        palm_center = landmarks[0]
+
+                        # --- Angle and Distance Features ---
+                        def angle_between_lines(p1, p2, p3, p4):
+                            v1 = np.array(p1) - np.array(p2)
+                            v2 = np.array(p3) - np.array(p4)
+                            cosine = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6)
+                            angle = np.arccos(np.clip(cosine, -1.0, 1.0))
+                            return np.degrees(angle)
+
+                        angle = angle_between_lines(thumb_tip, thumb_base, index_tip, index_base)
+                         
+                        X = np.array([[angle]])
+                        pred = model_KV.predict(X)[0]
+                        predicted_character = 'K' if pred == '11' else 'V'
 
         # Draw annotations
         x_min, y_min = max(0, x_min - offset), max(0, y_min - offset)
         x_max, y_max = min(w, x_max + offset), min(h, y_max + offset)
         cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-        cv2.putText(img, predicted_char, (x_min, y_min - 10), 
+        cv2.putText(img, predicted_character, (x_min, y_min - 10), 
                   cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3)
     
-    return img, predicted_char
+    return img, predicted_character
 
 # Streamlit UI
 st.title("GestureSpeak: ASL Image Recognition")
