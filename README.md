@@ -1,7 +1,7 @@
-# run on local host
-streamlit run depl.py
+## run on local host
+streamlit run app.py
 
-# run unit tests
+## run unit tests
 pytest tests/ -v
 
  
