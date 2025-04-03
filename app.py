@@ -45,7 +45,7 @@ def check_intersections(landmarks):
 st.set_page_config(page_title="Main Page", layout="wide")
 
 # Sidebar Title ABOVE the menu
-st.sidebar.title("📌 Navigation Menu")
+st.sidebar.title("⬆️ Navigation Menu")
 
 
 with open('models/model_main.p', 'rb') as f:
