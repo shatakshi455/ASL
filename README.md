@@ -28,9 +28,10 @@ GestureSpeak-Sign-to-Text-Converter/
    └──model_main.pickle
    └──model_scalerKV.pickle
    └──model_scalerMN.pickle
-├──pages                      # other pages of the user interface
-   └──depl.py
-   └──guide.py
+├──pages
+   └──Know_About_Project.py                     # other pages of the user interface
+   └──Check_From_Images.py
+   └──ASL_Reference_Image.py
 ├──tests                      # testing modules
    └──test_depl.py
    └──test_dataset.py
@@ -40,7 +41,7 @@ GestureSpeak-Sign-to-Text-Converter/
    └──train_classifier.py
    └──train_classifierKV.py
    └──train_classifierMN.py
-├──app.py                     # application 
+├──Real_Time_Recognition.py                     # application 
 └── README.md                 # Project documentation
 ```
 
@@ -56,7 +57,7 @@ GestureSpeak-Sign-to-Text-Converter/
    ```
 3. Run the application:
    ```bash
-   streamlit run app.py
+   streamlit run Real_Time_Recognition.py
    ```
 
 ## Training the Model

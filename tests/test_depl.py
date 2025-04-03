@@ -4,7 +4,7 @@ import cv2
 import numpy as np  
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from pages.depl import process_image 
+from pages.Check_From_Images import process_image 
 TEST_DIR = "asl_alphabet_test"
 
 @pytest.mark.parametrize("image_file", os.listdir(TEST_DIR))

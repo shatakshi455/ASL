@@ -15,10 +15,17 @@ def angle_between_lines(p1, p2, p3, p4):
     angle = np.arccos(np.clip(cosine, -1.0, 1.0))
     return np.degrees(angle)
 
-def standardised_distance(p1, p2, ref1, ref2):
-    dist = np.linalg.norm(np.array(p1) - np.array(p2))
-    scale = np.linalg.norm(np.array(ref1) - np.array(ref2)) + 1e-6
-    return dist / scale
+def same_side(a,  p1, p2):
+    """
+    Check if points a and b lie on the same side of the line formed by points p1 and p2 using x and y coordinates.
+    """
+    p1x, p1y = p1
+    p2x, p2y = p2
+    ax, ay = a
+    
+    # Compute cross products
+    cross1 = (ay - p1y)*(p2x - p1x) - (p2y - p1y)*(ax - p1x)
+    return cross1 >= 0
 
 # --- Dataset Directory ---
 data_dir = 'data/'
@@ -51,13 +58,22 @@ with mp_hands.Hands(static_image_mode=True, max_num_hands=1) as hands:
                 thumb_base = landmarks[2]
                 index_tip = landmarks[8]
                 index_base = landmarks[5]
-                palm_center = landmarks[0]
+
+                # --- Line Landmarks ---
+                p1, p2 = landmarks[9], landmarks[10]
+                p3, p4 = landmarks[10], landmarks[11]
+                p5, p6 = landmarks[11], landmarks[12]
 
                 # --- Features ---
                 angle = angle_between_lines(thumb_tip, thumb_base, index_tip, index_base)
-                #thumb_palm_dist = standardised_distance(thumb_tip, palm_center, palm_center, index_base)
 
-                features.append([angle])
+                # --- Additional Features ---
+                feature1 = 1 if same_side(thumb_tip, p1, p2) else 0
+                feature2 = 1 if same_side(thumb_tip, p3, p4) else 0
+                feature3 = 1 if same_side(thumb_tip, p5, p6) else 0
+               
+                print(label, angle, feature1, feature2, feature3)
+                features.append([angle, feature1, feature2, feature3])
                 targets.append(label)
 
 print(f"Total Samples Collected: {len(features)}")

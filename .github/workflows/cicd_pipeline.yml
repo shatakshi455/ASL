@@ -70,12 +70,12 @@ jobs:
         
       - name: Deploy with Streamlit
         run: |
-          streamlit run pages/depl.py &
+          streamlit run pages/Check_From_Images.py &
           sleep 3
           echo "Stopping Streamlit after 10 seconds."
-          pkill -f "streamlit run pages/depl.py"
-          streamlit run app.py &
+          pkill -f "streamlit run pages/Check_From_Images.py"
+          streamlit run Real_Time_Recognition.py &
           sleep 3
           echo "Stopping Streamlit after 10 seconds."
-          pkill -f "streamlit run app.py"
+          pkill -f "streamlit run Real_Time_Recognition.py"
 

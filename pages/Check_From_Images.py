@@ -5,13 +5,8 @@ import numpy as np
 import pickle
 import streamlit_extras.switch_page_button as switch
 
-
-st.set_page_config(page_title="Deploy Page", layout="wide")
-
-# Custom Sidebar Navigation
+st.set_page_config(page_title="Upload Images", page_icon="✌️", layout="wide")
 st.sidebar.title("📌 Navigation Menu")
-
-
 def calculate_angle(v1, v2):
     v1 = np.array(v1)
     v2 = np.array(v2)
@@ -153,7 +148,7 @@ def process_image(uploaded_file):
                         with open('models/model_scalerKV.p', 'rb') as f:
                            model_KV = pickle.load(f)['model']
 
-            
+                        landmarks = [(lm.x * w, lm.y * h) for lm in hand_landmarks.landmark]
                         # --- Feature extraction for KV only ---
                         thumb_tip = landmarks[4]
                         thumb_base = landmarks[2]
@@ -169,9 +164,26 @@ def process_image(uploaded_file):
                             angle = np.arccos(np.clip(cosine, -1.0, 1.0))
                             return np.degrees(angle)
 
+                        def same_side(a,  p1, p2):
+                            p1x, p1y = p1
+                            p2x, p2y = p2
+                            ax, ay = a
+                            
+                            # Compute cross products
+                            cross1 = (ay - p1y)*(p2x - p1x) - (p2y - p1y)*(ax - p1x)
+                            return cross1 >= 0
+                        
+                        p1, p2 = landmarks[9], landmarks[10]
+                        p3, p4 = landmarks[10], landmarks[11]
+                        p5, p6 = landmarks[11], landmarks[12]
+
+                        feature1 = 1 if same_side(thumb_tip, p1, p2) else 0
+                        feature2 = 1 if same_side(thumb_tip, p3, p4) else 0
+                        feature3 = 1 if same_side(thumb_tip, p5, p6) else 0
+                    
                         angle = angle_between_lines(thumb_tip, thumb_base, index_tip, index_base)
-                         
-                        X = np.array([[angle]])
+                            
+                        X = np.array([[angle, feature1, feature2, feature3]])
                         pred = model_KV.predict(X)[0]
                         predicted_character = 'K' if pred == '11' else 'V'
 
