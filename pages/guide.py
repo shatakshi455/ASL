@@ -3,7 +3,7 @@ import os
 from PIL import Image
 import streamlit_extras.switch_page_button as switch
 # Define the directory where ASL images are stored
-ASL_IMAGES_DIR = "./asl_alphabet_test"  # Change this to your actual path
+ASL_IMAGES_DIR = "./Guide_images"  # Change this to your actual path
 
 # Streamlit page setup
 st.title("American Sign Language (ASL) Signs Gallery")
