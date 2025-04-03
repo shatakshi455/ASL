@@ -2,7 +2,7 @@ import streamlit as st
 import os
 from PIL import Image
 
-# Define the directory as the current directory
+ 
 ASL_IMAGES_DIR = "."  # Current directory
 REFERENCE_IMAGE = "ASL_Reference.jpg"  # Ensure the filename is correct
 

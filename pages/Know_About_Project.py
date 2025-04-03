@@ -53,10 +53,8 @@ st.write(
 st.subheader("Features at a Glance")
 st.markdown(
     """
-    - **Interactive ASL Guide** – Browse a library of ASL signs with images and descriptions.
     - **Real-Time Sign Detection** – Use your webcam to recognize hand signs instantly.
     - **Upload & Check Images** – Upload an image to check sign recognition.
-    - **Training Mode** – Test your signing skills and get instant feedback.
     - **Learn & Practice** – Designed for both deaf and mute individuals for communication and for anyone to learn and practice sign language in a fun way.
     """
 )

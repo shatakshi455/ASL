@@ -7,7 +7,7 @@ import numpy as np
 import time
 import streamlit_extras.switch_page_button as switch
 
-
+st.sidebar.title("📌 Navigation Menu")
 def calculate_angle(v1, v2):
     v1 = np.array(v1)
     v2 = np.array(v2)
@@ -25,9 +25,6 @@ def lines_intersect(p1, p2, q1, q2):
     return ccw(p1, q1, q2) != ccw(p2, q1, q2) and ccw(p1, p2, q1) != ccw(p1, p2, q2)
 
 def check_intersections(landmarks):
-    """
-    landmarks: hand_landmarks.landmark (direct from MediaPipe)
-    """
     p1, p2 = get_point(landmarks[6]), get_point(landmarks[7])
     q1, q2 = get_point(landmarks[10]), get_point(landmarks[11])
 
@@ -92,7 +89,7 @@ previous_prediction = None
 start_time = None
 
 if "recognized_text" not in st.session_state:
-    st.session_state.recognized_text = ""  # Initialize only once
+    st.session_state.recognized_text = ""   
 
 
 if st.session_state.run_webcam:
@@ -168,7 +165,7 @@ if st.session_state.run_webcam:
                      predicted_character = 'M' if pred == '13' else 'N'
                     
                 elif(predicted_character == 'K' or predicted_character == 'V' or predicted_character == 'R'):
-                                        # --- Load specialized KV model ---
+                                     
                     if(check_intersections(hand_landmarks.landmark) == 1):
                         predicted_character = 'R'
                     else:
@@ -176,7 +173,7 @@ if st.session_state.run_webcam:
                            model_KV = pickle.load(f)['model']
 
                         landmarks = [(lm.x * w, lm.y * h) for lm in hand_landmarks.landmark]
-                        # --- Feature extraction for KV only ---
+                        
                         thumb_tip = landmarks[4]
                         thumb_base = landmarks[2]
                         index_tip = landmarks[8]

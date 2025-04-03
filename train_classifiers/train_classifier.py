@@ -9,8 +9,8 @@ def load_dataset():
     with open('datasets/dataset_main.pickle', 'rb') as f:
         data_dict = pickle.load(f)
 
-    data = np.asarray(data_dict['data'])  # Shape: (samples, features)
-    labels = np.asarray(data_dict['labels'])  # Shape: (samples,)
+    data = np.asarray(data_dict['data'])   
+    labels = np.asarray(data_dict['labels'])  
 
     return data, labels
 

@@ -3,11 +3,9 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import pickle
-
-# --- Mediapipe ---
+ 
 mp_hands = mp.solutions.hands
-
-# --- Feature Functions ---
+ 
 def angle_between_lines(p1, p2, p3, p4):
     v1 = np.array(p1) - np.array(p2)
     v2 = np.array(p3) - np.array(p4)
@@ -16,21 +14,17 @@ def angle_between_lines(p1, p2, p3, p4):
     return np.degrees(angle)
 
 def same_side(a,  p1, p2):
-    """
-    Check if points a and b lie on the same side of the line formed by points p1 and p2 using x and y coordinates.
-    """
+   
     p1x, p1y = p1
     p2x, p2y = p2
     ax, ay = a
     
-    # Compute cross products
+   
     cross1 = (ay - p1y)*(p2x - p1x) - (p2y - p1y)*(ax - p1x)
     return cross1 >= 0
-
-# --- Dataset Directory ---
+ 
 data_dir = 'data/'
-
-# --- Only use 10 and 21 folders ---
+ 
 labels = [folder for folder in os.listdir(data_dir) if folder in ['11', '22']]
 
 features = []
@@ -53,21 +47,17 @@ with mp_hands.Hands(static_image_mode=True, max_num_hands=1) as hands:
                 hand_landmarks = results.multi_hand_landmarks[0]
                 landmarks = [(lm.x * w, lm.y * h) for lm in hand_landmarks.landmark]
                 
-                # --- Landmarks ---
                 thumb_tip = landmarks[4]
                 thumb_base = landmarks[2]
                 index_tip = landmarks[8]
                 index_base = landmarks[5]
 
-                # --- Line Landmarks ---
                 p1, p2 = landmarks[9], landmarks[10]
                 p3, p4 = landmarks[10], landmarks[11]
                 p5, p6 = landmarks[11], landmarks[12]
 
-                # --- Features ---
                 angle = angle_between_lines(thumb_tip, thumb_base, index_tip, index_base)
 
-                # --- Additional Features ---
                 feature1 = 1 if same_side(thumb_tip, p1, p2) else 0
                 feature2 = 1 if same_side(thumb_tip, p3, p4) else 0
                 feature3 = 1 if same_side(thumb_tip, p5, p6) else 0
@@ -78,7 +68,6 @@ with mp_hands.Hands(static_image_mode=True, max_num_hands=1) as hands:
 
 print(f"Total Samples Collected: {len(features)}")
 
-# --- Save dataset ---
 with open('datasets/datasetKV.pickle', 'wb') as f:
     pickle.dump({'data': features, 'labels': targets}, f)
 

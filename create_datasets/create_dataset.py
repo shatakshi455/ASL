@@ -32,7 +32,7 @@ def create_dataset():
 
         for img_path in os.listdir(os.path.join(DATA_DIR, dir_)):
 
-            data_aux = []  # Reset for each image ✅
+            data_aux = []   
             x_, y_, z_ = [], [], []
             landmarks = []
 
@@ -40,14 +40,14 @@ def create_dataset():
             img = cv2.imread(os.path.join(DATA_DIR, dir_, img_path))
             if img is None:
                 print(f"Skipping corrupted image: {img_path}")
-                continue  # Skip corrupted images
+                continue   
 
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             results = hands.process(img_rgb)
 
             # Process only the first detected hand
             if results.multi_hand_landmarks:
-                hand_landmarks = results.multi_hand_landmarks[0]  # Only take one hand ✅
+                hand_landmarks = results.multi_hand_landmarks[0]  
 
                 # Extract 3D landmarks
                 for i in range(21):  # There are always 21 hand landmarks
@@ -93,7 +93,7 @@ def create_dataset():
         pickle.dump({'data': data, 'labels': labels}, f)
 
     print(f"Dataset saved with {len(data)} samples.")
-    return data, labels  # Returning dataset for testing
+    return data, labels  
 
 # Run only if the script is executed directly
 if __name__ == "__main__":
