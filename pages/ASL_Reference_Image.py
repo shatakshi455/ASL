@@ -6,7 +6,7 @@ from PIL import Image
 ASL_IMAGES_DIR = "."  # Current directory
 REFERENCE_IMAGE = "ASL_Reference.jpg"  # Ensure the filename is correct
 
-st.set_page_config(page_title="Reference Image", page_icon="👌", layout="wide")
+st.set_page_config(page_title="Reference Image", page_icon="👌", layout="centered")
 
 st.title("American Sign Language (ASL) Reference Image")
 

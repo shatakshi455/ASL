@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(page_title="ASL Recognition", page_icon="🤟", layout="wide")
+st.set_page_config(page_title="ASL Recognition", page_icon="🤟", layout="centered")
 import pickle
 import cv2
 import mediapipe as mp
