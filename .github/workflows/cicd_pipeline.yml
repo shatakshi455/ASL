@@ -26,19 +26,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Create datasets
-        run: |
-          python create_datasets/create_dataset.py
-          python create_datasets/create_datasetMN.py
-          python create_datasets/create_datasetKV.py
-
-
-      - name: Train classifiers
-        run: |
-          python train_classifiers/train_classifier.py
-          python train_classifiers/train_classifierMN.py
-          python train_classifiers/train_classifierKV.py
-
       - name: Run tests
         run: |
          pytest -v tests/test_dataset.py
