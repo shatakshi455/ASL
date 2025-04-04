@@ -75,9 +75,4 @@ st.write(
     "This project is a step towards making ASL more approachable for everyone."
 )
 
-# Closing Note
-st.markdown("---")
-st.markdown(
-    "*We're constantly improving this app! Your feedback helps make ASL learning better.*"
-)
-st.markdown("Developed with ❤️ by Srishti & Shatakshi.")
+ 
