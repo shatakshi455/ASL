@@ -3,6 +3,9 @@
 ## Overview
 GestureSpeak-Sign-to-Text-Converter (GSSTC) is a machine learning-based application designed to recognize Sign Language gestures and convert them into text or speech. The project leverages Mediapipe Hands for real-time hand tracking, extracts 3D hand landmarks, and utilizes a trained classifier for gesture recognition. GSSTC aims to bridge the communication gap for individuals who rely on sign language by providing an intuitive and accessible solution.
 
+## Video Demo
+https://drive.google.com/file/d/1DD9WT3ayrFT_ssQlijyWX-ZKIQinHfPp/view?usp=drive_link
+
 ## Features
 - **Real-Time Gesture Recognition**: Uses Mediapipe Hands to detect and track hand landmarks.
 - **Custom Model for Signs**: A specialized classifier trained on sign language gestures.
